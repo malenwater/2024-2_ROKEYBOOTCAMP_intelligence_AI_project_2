@@ -20,27 +20,24 @@ class FrontCarTracking(Node):
         # self.frame_time = 1 / 30
         self.frame_time = 1
         self.lock_follow_car_ID = threading.Lock()
-        self.lock_follow_car = threading.Lock()
+        # self.lock_follow_car = threading.Lock()
         self.running = False
         # YOLO 실행 클래스를 인스턴스로 생성하여 관리
         self.yolo_processor = YoloProcessor(self.frame_time)
         self.yolo_thread = threading.Thread(target=self.yolo_processor.run_yolo)
         self.yolo_thread.start()
-        
-        # while True:
-        #     detection_result = self.yolo_processor.get_result()  # ✅ 직접 변수 읽기
-        #     if detection_result is not None:
-        #         print("📸 YOLO 감지 결과:", detection_result)
-        #     time.sleep(0.01)  # 메인 스레드 루프 간격 조정
+
 
         self.move_car_srv = self.create_service(MoveCar, 'move_car', self.move_car_callback)
         self.get_logger().info('MoveCar Service Ready')
         
-        # self.ask_right_cli = self.create_client(AskRight, 'ask_right')
-        # while not self.ask_right_cli.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('Waiting for AskRight service...')
-        # self.get_logger().info('AskRight service Ready')
-            
+        self.ask_right_cli = self.create_client(AskRight, 'ask_right')
+        while not self.ask_right_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for AskRight service...')
+        self.req = AskRight.Request()
+        self.get_logger().info('AskRight service Ready')
+        self.ask_right_send_request()
+        
         self.subscription = self.create_subscription(
             StopCar,
             'stop_car',
@@ -62,8 +59,8 @@ class FrontCarTracking(Node):
                     for obj in (self.detection_result):
                         x1, y1, x2, y2, track_id, detect_class = obj
                         if self.follow_car_ID == track_id:
-                            with self.lock_follow_car:
-                                self.follow_car = [x1, y1, x2, y2, self.NOMAL]
+                            # with self.lock_follow_car:
+                            self.follow_car = [x1, y1, x2, y2, self.NOMAL]
                             self.count_lost_follow_car_ID = 0
                             check_exit_current_follow_car_ID = True
                             break
@@ -73,10 +70,10 @@ class FrontCarTracking(Node):
                             
                 # print("YOLO 감지 결과:", self.detection_result)
             time.sleep(self.frame_time)
-    def get_follow_car(self):
-        """YOLO 결과 읽기"""
-        with self.lock_follow_car:  # 🔒 데이터 충돌 방지
-            return self.follow_car
+    # def get_follow_car(self):
+    #     """YOLO 결과 읽기"""
+    #     with self.lock_follow_car:  # 🔒 데이터 충돌 방지
+    #         return self.follow_car
         
     def move_car_callback(self, request, response):
         self.get_logger().info(f'Received MoveCar request: {request}')
@@ -90,9 +87,9 @@ class FrontCarTracking(Node):
                     response.move = True
         return response
     
-    def ask_right_send_request(self, some_value):
-        self.req.some_field = some_value  # 요청 데이터 설정 (예시)
-        future = self.cli.call_async(self.req)
+    def ask_right_send_request(self):
+        self.req.data = ["hihi"]  # 요청 데이터 설정 (예시)
+        future = self.ask_right_cli.call_async(self.req)
         future.add_done_callback(self.ask_right_response_callback)
 
     def ask_right_response_callback(self, future):
@@ -106,6 +103,9 @@ class FrontCarTracking(Node):
         self.get_logger().info(f'Received StopCar message: {msg} and reseted follow_car_ID')
         with self.lock_follow_car_ID:
             self.follow_car_ID = None
+        # with self.lock_follow_car:
+            self.follow_car = None
+            
     def shutdown(self):
         """노드 종료 시 YOLO 스레드 안전하게 종료"""
         self.get_logger().info("YOLO 스레드를 종료합니다.")

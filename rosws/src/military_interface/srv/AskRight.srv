@@ -1,2 +1,3 @@
+string[] data  # 문자열 배열 데이터
 ---
 bool right
