@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'Military_Ai'
+package_name = 'military_ai'
 
 setup(
     name=package_name,
@@ -13,10 +13,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='kim',
-    maintainer_email='k9936ys@naver.com',
+    maintainer='sunwolee',
+    maintainer_email='128200788+malenwater@users.noreply.github.com',
     description='TODO: Package description',
-    license='Apache-2.0',
+    license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
