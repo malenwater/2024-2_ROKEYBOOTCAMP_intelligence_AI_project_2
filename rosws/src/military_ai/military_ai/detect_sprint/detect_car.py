@@ -4,13 +4,13 @@ from ultralytics import YOLO
 from sort import Sort  # sort.py, hungarian.py 필요
 import time
 import threading
+import torch
 
 class YoloProcessor:
     """YOLO 모델을 실행하는 클래스 (로직을 분리하여 관리)"""
-    def __init__(self):
+    def __init__(self,frame_time=1/30):
         self.model_path = "best5car_dummy.pt"
-        # self.frame_time = 1 / 30
-        self.frame_time = 1
+        self.frame_time = frame_time
         self.tracking = None
         self.lock = threading.Lock()
         self.running = False
@@ -32,16 +32,22 @@ class YoloProcessor:
             return
         
         if __name__ == "__main__":
-            cv2.namedWindow('webcam')
+            cv2.namedWindow('YOLO + SORT')
+            if torch.cuda.is_available():
+                print(f"GPU 사용 가능: {torch.cuda.get_device_name(0)}")
+            else:
+                print("GPU 사용 불가, CPU만 사용 중입니다.")
             
         while self.running:
             ret, frame = cap.read()
             if not ret:
                 break
-
+            start_time = time.time()
             # 1) YOLO 추론
-            results = model.predict(frame, conf=0.5, verbose=False)
-
+            results = model.predict(frame, conf=0.5, verbose=False) #
+            yolo_processing_time = time.time() - start_time
+            wait_time = self.frame_time - yolo_processing_time
+            
             # 2) detections 배열과, 별도의 classes 리스트를 동시에 준비
             detections = []
             classes = []   # YOLO의 클래스 인덱스를 보관할 리스트
@@ -82,7 +88,7 @@ class YoloProcessor:
                 self.tracking = tracked_objects_with_class
             
             if __name__ == "__main__":
-                print(tracked_objects)
+                # print(tracked_objects)
                 # 4) 시각화
                 if len(tracked_objects) > 0:
                     for i, obj in enumerate(tracked_objects):
@@ -107,7 +113,9 @@ class YoloProcessor:
                     if cv2.waitKey(1) & 0xFF == 27:
                         break
             
-            time.sleep(self.frame_time)
+            if wait_time > 0:
+                # print(wait_time)
+                time.sleep(wait_time)
             
         cap.release()
         cv2.destroyAllWindows()
@@ -122,5 +130,5 @@ class YoloProcessor:
         self.running = False
         
 if __name__ == "__main__":
-    test = YoloProcessor()
+    test = YoloProcessor(1/30)
     test.run_yolo()
