@@ -18,6 +18,7 @@ set(msg_files
 )
 
 set(srv_files
+  "srv/AskRight.srv"
   "srv/MoveCar.srv"
 )
 

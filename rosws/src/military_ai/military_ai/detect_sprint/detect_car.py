@@ -40,7 +40,7 @@ class YoloProcessor:
                 break
 
             # 1) YOLO 추론
-            results = model.predict(frame, conf=0.5)
+            results = model.predict(frame, conf=0.5, verbose=False)
 
             # 2) detections 배열과, 별도의 classes 리스트를 동시에 준비
             detections = []
