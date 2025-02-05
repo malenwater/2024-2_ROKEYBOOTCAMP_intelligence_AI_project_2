@@ -17,14 +17,15 @@ class YoloProcessor:
         self.lock_tracking = threading.Lock()
         self.lock_tracking_img = threading.Lock()
         self.running = False
+        self.device = None
 
     def run_yolo(self):
         """YOLO 실행 함수"""
         print('YOLO 모델 시작')
         
         model = YOLO(self.model_path)
-        # cap = cv2.VideoCapture(2)
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(2)
+        # cap = cv2.VideoCapture(0)
         cap.set(3, 640)
         cap.set(4, 480)
         self.running = True
@@ -37,17 +38,20 @@ class YoloProcessor:
         if __name__ == "__main__":
             cv2.namedWindow('YOLO + SORT')
             if torch.cuda.is_available():
+                self.device = "cuda"
                 print(f"GPU 사용 가능: {torch.cuda.get_device_name(0)}")
             else:
+                self.device = "cpu"
                 print("GPU 사용 불가, CPU만 사용 중입니다.")
             
         while self.running:
             ret, frame = cap.read()
+
             if not ret:
                 break
             start_time = time.time()
             # 1) YOLO 추론
-            results = model.predict(frame, conf=0.5, verbose=False,device="cuda") #
+            results = model.predict(frame, conf=0.5, verbose=False,device=self.device) #
 
             
             # 2) detections 배열과, 별도의 classes 리스트를 동시에 준비
@@ -91,6 +95,7 @@ class YoloProcessor:
                 self.tracking_img = frame
             yolo_processing_time = time.time() - start_time
             wait_time = self.frame_time - yolo_processing_time
+            
             if __name__ == "__main__":
                 # print(tracked_objects)
                 # 4) 시각화
@@ -110,10 +115,10 @@ class YoloProcessor:
                         # 최종 표시: 클래스 이름 + 트랙ID
                         label = f"{class_name} (ID: {track_id})"
 
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 1)
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
                         cv2.putText(frame, label, (x1, y1 - 10),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                    (0,255,0), 1, cv2.LINE_4)
+                                    (0,255,0), 2, cv2.LINE_4)
                         
                 cv2.imshow("YOLO + SORT", frame)
                 if cv2.waitKey(1) & 0xFF == 27:

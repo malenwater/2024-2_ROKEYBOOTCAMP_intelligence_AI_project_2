@@ -14,10 +14,15 @@ class TestNode(Node):
         # YOLO 쓰레드를 백그라운드로 시작
         self.yolo_thread = threading.Thread(target=self.front_node.run_detect_controller)
         self.yolo_thread.start()
+        self.data_size = [480,640]
     def run_other(self):
         while True:
             self.data = self.front_node.get_follow_car()
-            print("성공 값 가져와서 넣기",self.data)
+            if self.data != None:
+                x1, y1, x2, y2, cls__ =  self.data
+                print("성공 값 가져와서 넣기",self.data)
+                print("좌우로 오른쪽 값만큼 ",(480 / 2) - ((x2 - x1) / 2))
+                print("위아래로 오른쪽 값만큼 ",(640 / 2) - ((y2 - y1) / 2))
             time.sleep(1)
 
     def shutdown(self):
