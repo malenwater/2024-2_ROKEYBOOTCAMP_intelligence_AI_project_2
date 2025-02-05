@@ -5,6 +5,7 @@ from sort import Sort  # sort.py, hungarian.py 필요
 import time
 import threading
 import torch
+import base64
 
 class YoloProcessor:
     """YOLO 모델을 실행하는 클래스 (로직을 분리하여 관리)"""
@@ -12,7 +13,9 @@ class YoloProcessor:
         self.model_path = "best5car_dummy.pt"
         self.frame_time = frame_time
         self.tracking = None
-        self.lock = threading.Lock()
+        self.tracking_img = None
+        self.lock_tracking = threading.Lock()
+        self.lock_tracking_img = threading.Lock()
         self.running = False
 
     def run_yolo(self):
@@ -84,8 +87,9 @@ class YoloProcessor:
                 tracked_objects_with_class.append((x1, y1, x2, y2, track_id, class_name))
 
                             
-            with self.lock:
+            with self.lock_tracking:
                 self.tracking = tracked_objects_with_class
+                self.tracking_img = frame
             
             if __name__ == "__main__":
                 # print(tracked_objects)
@@ -120,11 +124,27 @@ class YoloProcessor:
         cap.release()
         cv2.destroyAllWindows()
         print('YOLO 모델 종료')
+    
     def get_result(self):
         """YOLO 결과 읽기"""
-        with self.lock:  # 🔒 데이터 충돌 방지
+        with self.lock_tracking:  # 🔒 데이터 충돌 방지
             return self.tracking
-
+        
+    def get_result_img_base64(self,found_car_ID):
+        """YOLO 결과 읽기"""
+        with self.lock_tracking:  # 🔒 데이터 충돌 방지
+            print(found_car_ID)
+            print(type(self.tracking_img))
+            if self.tracking is None:
+                return None
+            for obj in self.tracking:
+                x1, y1, x2, y2, track_id, detect_class = obj
+                if found_car_ID == track_id:
+                    _, buffer = cv2.imencode('.jpg', self.tracking_img)
+                    base64_string = base64.b64encode(buffer).decode('utf-8')
+                    return base64_string
+        return None
+    
     def stop(self):
         """YOLO 스레드 종료"""
         self.running = False

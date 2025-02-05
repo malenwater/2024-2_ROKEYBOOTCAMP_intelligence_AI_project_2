@@ -21,6 +21,8 @@ class FrontCarTracking(Node):
         self.frame_time = 1
         self.lock_follow_car_ID = threading.Lock()
         self.lock_follow_car = threading.Lock()
+        self.ask_right_event = threading.Event()  # 이벤트 생성
+        self.ask_right_response = None
         self.running = False
         # YOLO 실행 클래스를 인스턴스로 생성하여 관리
         self.yolo_processor = YoloProcessor(self.frame_time)
@@ -36,7 +38,7 @@ class FrontCarTracking(Node):
             self.get_logger().info('Waiting for AskRight service...')
         self.req = AskRight.Request()
         self.get_logger().info('AskRight service Ready')
-        self.ask_right_send_request()
+        # self.ask_right_send_request()
         
         self.subscription = self.create_subscription(
             StopCar,
@@ -52,24 +54,34 @@ class FrontCarTracking(Node):
         while self.running:
             self.detection_result = self.yolo_processor.get_result()
             if self.follow_car_ID is not None:
-               with self.lock_follow_car_ID:  # 변수를 읽을 때도 Lock을 사용하여 안전하게
+                with self.lock_follow_car_ID:  # 변수를 읽을 때도 Lock을 사용하여 안전하게
                     print("Tracking Car ID:", self.detection_result)
                     
-                    check_exit_current_follow_car_ID = False
-                    for obj in (self.detection_result):
-                        x1, y1, x2, y2, track_id, detect_class = obj
-                        if self.follow_car_ID == track_id:
-                            with self.lock_follow_car:
-                                self.follow_car = [x1, y1, x2, y2, self.NOMAL]
-                            self.count_lost_follow_car_ID = 0
-                            check_exit_current_follow_car_ID = True
-                            break
+                    if self.count_lost_follow_car_ID >= 3 and self.detection_result != None and len(self.detection_result) > 0:
+                        print("over 30")
+                        print("over 30")
+                        print("over 30")
+                        x1, y1, x2, y2, track_id, detect_class = self.detection_result[0]
+                        if detect_class == "Car": # 차후에 바꿈
+                            self.found_car_ID = track_id
+                            print("hihi",self.ask_right_send_request())
+                            # self.follow_car_ID = track_id
+                    else:
+                        check_exit_current_follow_car_ID = False
+                        for obj in (self.detection_result):
+                            x1, y1, x2, y2, track_id, detect_class = obj
+                            if self.follow_car_ID == track_id:
+                                with self.lock_follow_car:
+                                    self.follow_car = [x1, y1, x2, y2, self.NOMAL]
+                                self.count_lost_follow_car_ID = 0
+                                check_exit_current_follow_car_ID = True
+                                break
+                        if check_exit_current_follow_car_ID == False:
+                            self.count_lost_follow_car_ID += 1
                         
-                    if check_exit_current_follow_car_ID == False:
-                        self.count_lost_follow_car_ID += 1
-                            
                 # print("YOLO 감지 결과:", self.detection_result)
             time.sleep(self.frame_time)
+            
     def get_follow_car(self):
         """YOLO 결과 읽기"""
         with self.lock_follow_car:  # 🔒 데이터 충돌 방지
@@ -79,7 +91,7 @@ class FrontCarTracking(Node):
         self.get_logger().info(f'Received MoveCar request: {request}')
         # --- 제대로 되고 있나 확인해서 트래킹하는 값 정하기
         response.move = True  # 요청 성공 여부 (예시)
-        print(self.detection_result)
+        # print(self.detection_result)
         if self.detection_result != None and len(self.detection_result) > 0:
             x1, y1, x2, y2, track_id, detect_class = self.detection_result[0]
             if detect_class == "Car": # 차후에 바꿈
@@ -87,22 +99,27 @@ class FrontCarTracking(Node):
                     self.follow_car_ID = track_id
                     response.move = True
                     
-                    self.found_car_ID = track_id
-        self.get_logger().info(self.yolo_processor.get_result_img_base64(self.found_car_ID))
-                    
         return response
     
     def ask_right_send_request(self):
         self.req.data = ["hihi"]  # 요청 데이터 설정 (예시)
-        future = self.ask_right_cli.call_async(self.req)
-        future.add_done_callback(self.ask_right_response_callback)
+        response = self.ask_right_cli.call(self.req)
+        self.ask_right_response = None  # 이전 응답 초기화
+        self.ask_right_event.clear()  # 이벤트 초기화
+        self.ask_right_response_callback(response)
+        self.ask_right_event.wait()  # 이벤트 초기화
+        return self.ask_right_event
 
-    def ask_right_response_callback(self, future):
+
+    def ask_right_response_callback(self, response):
         try:
-            response = future.result()
             self.get_logger().info(f'Received AskRight response: {response}')
+            self.service_response = response.right  # 응답 저장
         except Exception as e:
             self.get_logger().error(f'Service call failed: {e}')
+            self.service_response = False  # 에러 발생 시 False 반환
+        finally:
+            self.ask_right_event.set()  # 이벤트 트리거 (대기 중인 쓰레드 깨움)
             
     def stop_car_callback(self, msg):
         self.get_logger().info(f'Received StopCar message: {msg} and reseted follow_car_ID')

@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from military_interface.srv import AskRight  # 'military_interface' 패키지의 AskRight 서비스 파일을 import
-
+import time
 class StringArrayService(Node):
     def __init__(self):
         super().__init__('string_array_service')  # 노드 이름
@@ -12,7 +12,7 @@ class StringArrayService(Node):
         # 요청에서 문자열 배열 데이터 받기
         data = request.data
         self.get_logger().info(f'Received data: {data}')
-
+        time.sleep(10)
         # 응답에서 boolean 값 설정
         response.right = True  # 예시로 right 값을 True로 설정
         return response
