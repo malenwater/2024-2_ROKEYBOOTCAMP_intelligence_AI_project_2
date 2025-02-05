@@ -20,7 +20,7 @@ class FrontCarTracking(Node):
         # self.frame_time = 1 / 30
         self.frame_time = 1
         self.lock_follow_car_ID = threading.Lock()
-        # self.lock_follow_car = threading.Lock()
+        self.lock_follow_car = threading.Lock()
         self.running = False
         # YOLO 실행 클래스를 인스턴스로 생성하여 관리
         self.yolo_processor = YoloProcessor(self.frame_time)
@@ -59,8 +59,8 @@ class FrontCarTracking(Node):
                     for obj in (self.detection_result):
                         x1, y1, x2, y2, track_id, detect_class = obj
                         if self.follow_car_ID == track_id:
-                            # with self.lock_follow_car:
-                            self.follow_car = [x1, y1, x2, y2, self.NOMAL]
+                            with self.lock_follow_car:
+                                self.follow_car = [x1, y1, x2, y2, self.NOMAL]
                             self.count_lost_follow_car_ID = 0
                             check_exit_current_follow_car_ID = True
                             break
@@ -70,10 +70,10 @@ class FrontCarTracking(Node):
                             
                 # print("YOLO 감지 결과:", self.detection_result)
             time.sleep(self.frame_time)
-    # def get_follow_car(self):
-    #     """YOLO 결과 읽기"""
-    #     with self.lock_follow_car:  # 🔒 데이터 충돌 방지
-    #         return self.follow_car
+    def get_follow_car(self):
+        """YOLO 결과 읽기"""
+        with self.lock_follow_car:  # 🔒 데이터 충돌 방지
+            return self.follow_car
         
     def move_car_callback(self, request, response):
         self.get_logger().info(f'Received MoveCar request: {request}')
@@ -103,7 +103,7 @@ class FrontCarTracking(Node):
         self.get_logger().info(f'Received StopCar message: {msg} and reseted follow_car_ID')
         with self.lock_follow_car_ID:
             self.follow_car_ID = None
-        # with self.lock_follow_car:
+        with self.lock_follow_car:
             self.follow_car = None
             
     def shutdown(self):
