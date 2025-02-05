@@ -67,17 +67,22 @@ class FrontCarTracking(Node):
                             print("hihi",self.ask_right_send_request())
                             # self.follow_car_ID = track_id
                     else:
+                        # ---------------------------------------------
                         check_exit_current_follow_car_ID = False
                         for obj in (self.detection_result):
                             x1, y1, x2, y2, track_id, detect_class = obj
                             if self.follow_car_ID == track_id:
+                                
+                                # 이부분 큐로 전환
                                 with self.lock_follow_car:
                                     self.follow_car = [x1, y1, x2, y2, self.NOMAL]
+                                    
                                 self.count_lost_follow_car_ID = 0
                                 check_exit_current_follow_car_ID = True
                                 break
                         if check_exit_current_follow_car_ID == False:
                             self.count_lost_follow_car_ID += 1
+                        # ---------------------------------------------
                         
                 # print("YOLO 감지 결과:", self.detection_result)
             time.sleep(self.frame_time)
