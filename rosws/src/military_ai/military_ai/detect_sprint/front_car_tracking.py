@@ -12,7 +12,7 @@ class FrontCarTracking(Node):
         super().__init__('front_car_tracking')
         self.NOMAL = 1
         self.LOST = 2
-        self.FIND = 3
+        self.found_car_ID = None
         self.follow_car_ID = None
         self.follow_car = None
         self.detection_result = None
@@ -79,12 +79,17 @@ class FrontCarTracking(Node):
         self.get_logger().info(f'Received MoveCar request: {request}')
         # --- 제대로 되고 있나 확인해서 트래킹하는 값 정하기
         response.move = True  # 요청 성공 여부 (예시)
+        print(self.detection_result)
         if self.detection_result != None and len(self.detection_result) > 0:
             x1, y1, x2, y2, track_id, detect_class = self.detection_result[0]
-            if detect_class == "Dummy": # 차후에 바꿈
+            if detect_class == "Car": # 차후에 바꿈
                 with self.lock_follow_car_ID:
                     self.follow_car_ID = track_id
                     response.move = True
+                    
+                    self.found_car_ID = track_id
+        self.get_logger().info(self.yolo_processor.get_result_img_base64(self.found_car_ID))
+                    
         return response
     
     def ask_right_send_request(self):
