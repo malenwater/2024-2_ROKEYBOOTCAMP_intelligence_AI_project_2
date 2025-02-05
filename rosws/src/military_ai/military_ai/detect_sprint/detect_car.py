@@ -47,9 +47,8 @@ class YoloProcessor:
                 break
             start_time = time.time()
             # 1) YOLO 추론
-            results = model.predict(frame, conf=0.5, verbose=False) #
-            yolo_processing_time = time.time() - start_time
-            wait_time = self.frame_time - yolo_processing_time
+            results = model.predict(frame, conf=0.5, verbose=False,device="cuda") #
+
             
             # 2) detections 배열과, 별도의 classes 리스트를 동시에 준비
             detections = []
@@ -90,11 +89,13 @@ class YoloProcessor:
             with self.lock_tracking:
                 self.tracking = tracked_objects_with_class
                 self.tracking_img = frame
-            
+            yolo_processing_time = time.time() - start_time
+            wait_time = self.frame_time - yolo_processing_time
             if __name__ == "__main__":
                 # print(tracked_objects)
                 # 4) 시각화
                 if len(tracked_objects) > 0:
+                    # print(len(tracked_objects))
                     for i, obj in enumerate(tracked_objects):
                         x1, y1, x2, y2, track_id = obj
                         x1, y1, x2, y2, track_id = int(x1), int(y1), int(x2), int(y2), int(track_id)
@@ -109,14 +110,15 @@ class YoloProcessor:
                         # 최종 표시: 클래스 이름 + 트랙ID
                         label = f"{class_name} (ID: {track_id})"
 
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 1)
                         cv2.putText(frame, label, (x1, y1 - 10),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                    (0,255,0), 2)
-                    cv2.imshow("YOLO + SORT", frame)
-                    if cv2.waitKey(1) & 0xFF == 27:
-                        break
-            
+                                    (0,255,0), 1, cv2.LINE_4)
+                        
+                cv2.imshow("YOLO + SORT", frame)
+                if cv2.waitKey(1) & 0xFF == 27:
+                    break
+
             if wait_time > 0:
                 # print(wait_time)
                 time.sleep(wait_time)
