@@ -3,7 +3,7 @@ from rclpy.node import Node
 from detect_car import YoloProcessor
 import threading
 import time
-from military_interface.msg import StopCar
+from military_interface.msg import StopCar, TrackingPos
 from military_interface.srv import AskRight, MoveCar
 
 class FrontCarTracking(Node):
@@ -51,6 +51,19 @@ class FrontCarTracking(Node):
         )
         self.get_logger().info('Subscribed to StopCar topic')
         
+        self.TrackingPos_publisher = self.create_publisher(
+            TrackingPos,
+            'TrackingPos',
+            10
+            )
+
+
+    def publish_TrackingPos(self,send_data):
+        msg = TrackingPos()
+        msg.trackingpos = send_data
+        self.TrackingPos_publisher.publish(msg)
+        self.get_logger().info('Published publish_TrackingPos')
+
     def run_tracking(self):
         self.running = True
         self.get_logger().info(f'run_tracking start')
@@ -101,9 +114,18 @@ class FrontCarTracking(Node):
             
     def change_tracking(self):
         self.get_logger().info(f'change_tracking start')
-        
+        send_data_msg = []
+        width = self.follow_car[2] - self.follow_car[0]
+        height = self.follow_car[3] - self.follow_car[1]
+        mid_x = self.follow_car[0] + width / 2
+        mid_y = self.follow_car[1] + height / 2
+        send_data_msg.append(mid_x)
+        send_data_msg.append(mid_y)
+        send_data_msg.append(width)
+        send_data_msg.append(height)
+        send_data_msg.append(0.)
+        self.publish_TrackingPos(send_data_msg)
         self.get_logger().info(f'change_tracking end')
-        pass
     
     def get_follow_car(self):
         """YOLO 결과 읽기"""
