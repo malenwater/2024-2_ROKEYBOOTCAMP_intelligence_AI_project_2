@@ -25,6 +25,7 @@ setup(
             'AMRmainServer = military_ai.detect_sprint.CentralAMRControllerServerClass:main',
             'MoveArg = military_ai.AMR_sprint.FindRCImgNode:main',
             'Movecmd = military_ai.AMR_sprint.tur_cmd_vel:main',
+            'Nav = military_ai.AMR_sprint.nav:main',
         ],
     },
 )
