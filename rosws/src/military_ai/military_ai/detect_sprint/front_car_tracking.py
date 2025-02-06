@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from military_ai.detect_sprint.detect_car import YoloProcessor
+from detect_car import YoloProcessor
 import threading
 import time
 from military_interface.msg import StopCar
@@ -10,7 +10,9 @@ class FrontCarTracking(Node):
     """ROS2 서비스 노드 (YOLO 실행 요청을 처리)"""
     def __init__(self):
         super().__init__('front_car_tracking')
-        self.AMR_STATUS = 2
+        # self.AMR_STATUS = 2
+        self.AMR_STATUS = 0
+        self.CAR = 0
         # AMR_STATUS = 0 평상시 추적
         # AMR_STATUS = 1 객체 잃은 추적
         # AMR_STATUS = 2 대기 상태
@@ -21,8 +23,6 @@ class FrontCarTracking(Node):
         self.count_lost_follow_car_ID = 0
         # self.frame_time = 1 / 30
         self.frame_time = 1
-        self.lock_follow_car_ID = threading.Lock()
-        self.lock_follow_car = threading.Lock()
         self.ask_right_event = threading.Event()  # 이벤트 생성
         self.ask_right_response = None
         self.running = False
@@ -36,11 +36,11 @@ class FrontCarTracking(Node):
         self.move_car_srv = self.create_service(MoveCar, 'move_car', self.move_car_callback)
         self.get_logger().info('MoveCar Service Ready')
         
-        self.ask_right_cli = self.create_client(AskRight, 'ask_right')
-        while not self.ask_right_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for AskRight service...')
-        self.req = AskRight.Request()
-        self.get_logger().info('AskRight service Ready')
+        # self.ask_right_cli = self.create_client(AskRight, 'ask_right')
+        # while not self.ask_right_cli.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('Waiting for AskRight service...')
+        # self.req = AskRight.Request()
+        # self.get_logger().info('AskRight service Ready')
         # self.ask_right_send_request()
         
         self.subscription = self.create_subscription(
@@ -56,12 +56,17 @@ class FrontCarTracking(Node):
         self.get_logger().info(f'run_tracking start')
         while self.running:
             self.detection_result = self.yolo_processor.get_result()
+            self.get_logger().info(f'run_tracking {self.detection_result}')
             
-            if self.AMR_STATUS == 0:
-                if self.follow_car_ID is not None:
-                    with self.lock_follow_car_ID:  # 변수를 읽을 때도 Lock을 사용하여 안전하게
-                        self.update_current_RC()
-                        self.change_tracking()
+            if self.detection_result != None and len(self.detection_result) > 0:
+                self.detection_result.sort(key=lambda x: x[6], reverse=True)
+                self.follow_car_ID = self.detection_result[0][5]
+                self.AMR_STATUS = 0
+                
+            if self.AMR_STATUS == 0 and self.follow_car_ID is not None:
+                self.get_logger().info(f'AMR_STATUS {self.AMR_STATUS}, will move')
+                self.update_current_RC()
+                self.change_tracking()
  
             elif self.AMR_STATUS == 1:
                 self.check_tracking()
@@ -79,43 +84,42 @@ class FrontCarTracking(Node):
         pass
                 
     def update_current_RC(self):
+        self.get_logger().info(f'update_current_RC start')
         check_exit_current_follow_car_ID = False
         for obj in (self.detection_result):
-            x1, y1, x2, y2, track_id, detect_class = obj
+            x1, y1, x2, y2, track_id, class_id, confidence = obj
             if self.follow_car_ID == track_id:
-                
                 # 이부분 큐로 전환
-                with self.lock_follow_car:
-                    self.follow_car = [x1, y1, x2, y2]
-                    
+                self.follow_car = [x1, y1, x2, y2]
                 self.count_lost_follow_car_ID = 0
                 check_exit_current_follow_car_ID = True
+                
                 break
         if check_exit_current_follow_car_ID == False:
             self.count_lost_follow_car_ID += 1
+        self.get_logger().info(f'update_current_RC end {self.follow_car}')
             
     def change_tracking(self):
+        self.get_logger().info(f'change_tracking start')
+        
+        self.get_logger().info(f'change_tracking end')
         pass
     
     def get_follow_car(self):
         """YOLO 결과 읽기"""
-        with self.lock_follow_car:  # 🔒 데이터 충돌 방지
-            return self.follow_car
+        return self.follow_car
         
     def move_car_callback(self, request, response):
         self.get_logger().info(f'Received MoveCar request: {request}')
         # --- 제대로 되고 있나 확인해서 트래킹하는 값 정하기
         response.move = True  # 요청 성공 여부 (예시)
-        # print(self.detection_result)
-        
-        # 일단 이거 바꿔야함 선택하는 걸로 바꿔야하는데 차후에 바꾸기로
+        self.get_logger().info(f'check detection_result in function {self.detection_result}')
+        # 최대 컨피던스 선택
         if self.detection_result != None and len(self.detection_result) > 0:
-            x1, y1, x2, y2, track_id, detect_class = self.detection_result[0]
-            if detect_class == "Car": # 차후에 바꿈
-                with self.lock_follow_car_ID:
-                    self.follow_car_ID = track_id
-                    self.AMR_STATUS = 0
-                    response.move = True
+            self.detection_result.sort(key=lambda x: x[6], reverse=True)
+            self.follow_car_ID = self.detection_result[0][5]
+            self.AMR_STATUS = 0
+            response.move = False  # 요청 성공 여부 (예시)
                     
         return response
     
@@ -141,10 +145,8 @@ class FrontCarTracking(Node):
     def stop_car_callback(self, msg):
         self.get_logger().info(f'Received StopCar message: {msg} and reseted follow_car_ID')
         self.AMR_STATUS = 2
-        with self.lock_follow_car_ID:
-            self.follow_car_ID = None
-        with self.lock_follow_car:
-            self.follow_car = None
+        self.follow_car_ID = None
+        self.follow_car = None
             
     def shutdown(self):
         """노드 종료 시 YOLO 스레드 안전하게 종료"""
