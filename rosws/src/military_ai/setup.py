@@ -1,5 +1,6 @@
 from setuptools import find_packages, setup
-
+import glob
+import os
 package_name = 'military_ai'
 
 setup(
@@ -10,6 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/resource', glob.glob(os.path.join('resource', '*.pt'))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,7 +22,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'AMRmainServer = military_ai.detect_sprint.front_car_tracking:main',
+            'AMRmainServer = military_ai.detect_sprint.CentralAMRControllerServerClass:main',
         ],
     },
 )

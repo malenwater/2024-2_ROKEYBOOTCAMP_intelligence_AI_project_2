@@ -18,11 +18,13 @@ set(msg_files
 "msg/StopCar.msg"
 "msg/NavGo.msg"
 "msg/TrackingPos.msg"
+"msg/Return.msg"
 )
 
 set(srv_files
   "srv/AskRight.srv"
   "srv/MoveCar.srv"
+  "srv/SelectID.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
