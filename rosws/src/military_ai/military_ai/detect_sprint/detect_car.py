@@ -61,8 +61,8 @@ class YoloProcessor:
         
     def get_result(self):
         """최신 YOLO 감지 결과 반환"""
-        return self.detection_result
-        # return self.high_car
+        # return self.detection_result
+        return self.high_car
     
     def stop(self):
         """YOLO 실행 중지"""
