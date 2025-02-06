@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32
+from std_msgs.msg import Float32
 from geometry_msgs.msg import Twist
 
 class ControlCMDModeNode(Node):
@@ -9,7 +9,7 @@ class ControlCMDModeNode(Node):
         
         # /cmd_mode 구독 (0: 좌회전, 2: 우회전, 1: 직진, 3: 정지)
         self.subscription = self.create_subscription(
-            Int32,
+            Float32,
             '/cmd_mode',
             self.cmd_mode_callback,
             10)
@@ -22,21 +22,21 @@ class ControlCMDModeNode(Node):
     def cmd_mode_callback(self, msg):
         cmd_vel_msg = Twist()
 
-        if msg.data == 0:  # 좌회전
+        if msg.data == 0.0:  # 좌회전
             cmd_vel_msg.angular.z = 0.5
             cmd_vel_msg.linear.x = 0.1
             self.get_logger().info("Turning Left")
         
-        elif msg.data == 1:  # 직진
+        elif msg.data == 1.0:  # 직진
             cmd_vel_msg.linear.x = 0.2
             self.get_logger().info("Moving Forward")
         
-        elif msg.data == 2:  # 우회전
+        elif msg.data == 2.0:  # 우회전
             cmd_vel_msg.angular.z = -0.5
             cmd_vel_msg.linear.x = 0.1
             self.get_logger().info("Turning Right")
            
-        elif msg.data == 3:  # 정지
+        elif msg.data == 3.0:  # 정지
             cmd_vel_msg.linear.x = 0.0
             cmd_vel_msg.angular.z = 0.0
             self.get_logger().info("Stopping")
