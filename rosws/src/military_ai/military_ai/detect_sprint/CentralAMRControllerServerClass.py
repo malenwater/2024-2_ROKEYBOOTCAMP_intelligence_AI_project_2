@@ -9,7 +9,7 @@ from .SubStopAMRNode import SubStopAMRNode
 from .PubReturnAMRNode import PubReturnAMRNode
 from .SubReturnAMRNode import SubReturnAMRNode
 from .SrvRequestSolveAMRNode import SrvRequestSolveAMRNode
-
+from .SrvObjectionSeletionAMRNode import SrvObjectionSeletionAMRNode
 class CentralAMRControllerServerClass(Node):
     """ROS2 서비스 노드 (YOLO 실행 요청을 처리)"""
     def __init__(self):
@@ -43,6 +43,8 @@ class CentralAMRControllerServerClass(Node):
         self.SubReturnAMRNode = SubReturnAMRNode(self)
         
         self.SrvRequestSolveAMRNode = SrvRequestSolveAMRNode(self)
+        self.SrvObjectionSeletionAMRNode = SrvObjectionSeletionAMRNode(self)
+        
     def run_tracking(self):
         self.running = True
         self.get_logger().info(f'run_tracking start')
@@ -52,9 +54,9 @@ class CentralAMRControllerServerClass(Node):
             self.get_logger().info(f'run_tracking AMR_STATUS : {self.AMR_STATUS}')
             self.get_logger().info(f'run_tracking follow_car_ID : {self.follow_car_ID}')
             
-            if self.detection_result != None and len(self.detection_result) > 0:
-                self.detection_result.sort(key=lambda x: x[6], reverse=True)
-                self.follow_car_ID = self.detection_result[0][5]
+            # if self.detection_result != None and len(self.detection_result) > 0:
+            #     self.detection_result.sort(key=lambda x: x[6], reverse=True)
+            #     self.follow_car_ID = self.detection_result[0][5]
                 
             if self.AMR_STATUS == 0 and self.follow_car_ID is not None:
                 self.get_logger().info(f'AMR_STATUS {self.AMR_STATUS}, will move')
@@ -163,6 +165,7 @@ def main():
     executor.add_node(node.SubStopAMRNode) # FrontCarTracking 노드 추가
     executor.add_node(node.SubReturnAMRNode) # FrontCarTracking 노드 추가
     executor.add_node(node.PubReturnAMRNode) # FrontCarTracking 노드 추가
+    executor.add_node(node.SrvObjectionSeletionAMRNode) # FrontCarTracking 노드 추가
     
     try:
         executor.spin()  # ROS 2 이벤트 루프 시작

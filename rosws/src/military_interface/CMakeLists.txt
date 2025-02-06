@@ -24,6 +24,7 @@ set(msg_files
 set(srv_files
   "srv/AskRight.srv"
   "srv/MoveCar.srv"
+  "srv/SelectID.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
