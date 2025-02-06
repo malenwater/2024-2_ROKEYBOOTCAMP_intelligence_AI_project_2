@@ -42,9 +42,9 @@ class YoloProcessor:
                 high_car = []
                 for box in results[0].boxes.data.tolist():
                     if len(box) >= 6:
-                        x1, y1, x2, y2, class_id, confidence = box[:6]
-                        track_id = int(box[6]) if len(box) > 6 and isinstance(box[6], (int, float)) else -1
-                        if class_id == "Car" and confidence >= 0.8:
+                        x1, y1, x2, y2, track_id, confidence = box[:6]
+                        class_id = int(box[6]) if len(box) > 6 and isinstance(box[6], (int, float)) else -1
+                        if class_id == 0 and confidence >= 0.8:
                             high_car.append([x1, y1, x2, y2, track_id, class_id, confidence])
                         detections.append([x1, y1, x2, y2, track_id, class_id, confidence])
                 self.detection_result = detections
@@ -53,7 +53,8 @@ class YoloProcessor:
                 # if current_time - last_print_time > 0.5:
                 #     print("\n=== Detection Results ===")
                 #     for d in self.detection_result:
-                #         print(f"class_id : {d[4]} ,track_id: {d[5]}, confidence: {d[6]}, BBox: ({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f}, {d[3]:.1f})")
+                #         x1, y1, x2, y2, track_id, class_id, confidence = d
+                #         print(f"class_id : {class_id} ,track_id: {track_id}, confidence: {confidence}, BBox: ({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f}, {d[3]:.1f})")
                 #     last_print_time = current_time
             
             time.sleep(self.frame_time)

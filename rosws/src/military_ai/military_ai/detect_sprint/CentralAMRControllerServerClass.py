@@ -10,6 +10,8 @@ from .PubReturnAMRNode import PubReturnAMRNode
 from .SubReturnAMRNode import SubReturnAMRNode
 from .SrvRequestSolveAMRNode import SrvRequestSolveAMRNode
 from .SrvObjectionSeletionAMRNode import SrvObjectionSeletionAMRNode
+from .PubFindObjAMRNode import PubFindObjAMRNode
+
 class CentralAMRControllerServerClass(Node):
     """ROS2 서비스 노드 (YOLO 실행 요청을 처리)"""
     def __init__(self):
@@ -42,6 +44,8 @@ class CentralAMRControllerServerClass(Node):
         self.PubReturnAMRNode = PubReturnAMRNode()
         self.SubReturnAMRNode = SubReturnAMRNode(self)
         
+        self.PubFindObjAMRNode = PubFindObjAMRNode()
+        
         self.SrvRequestSolveAMRNode = SrvRequestSolveAMRNode(self)
         self.SrvObjectionSeletionAMRNode = SrvObjectionSeletionAMRNode(self)
         
@@ -53,10 +57,6 @@ class CentralAMRControllerServerClass(Node):
             self.get_logger().info(f'run_tracking detection_result : {self.detection_result}')
             self.get_logger().info(f'run_tracking AMR_STATUS : {self.AMR_STATUS}')
             self.get_logger().info(f'run_tracking follow_car_ID : {self.follow_car_ID}')
-            
-            # if self.detection_result != None and len(self.detection_result) > 0:
-            #     self.detection_result.sort(key=lambda x: x[6], reverse=True)
-            #     self.follow_car_ID = self.detection_result[0][5]
                 
             if self.AMR_STATUS == 0 and self.follow_car_ID is not None:
                 self.get_logger().info(f'AMR_STATUS {self.AMR_STATUS}, will move')
@@ -94,6 +94,8 @@ class CentralAMRControllerServerClass(Node):
                     self.get_logger().info(f'check_tracking detect obj end')
                     self.AMR_STATUS = 1
                     self.count_lost_follow_car_ID
+                    self.PubFindObjAMRNode.publish_float_to_AMR_cmdVel()
+                    
         self.get_logger().info(f'check_tracking end')
                 
     def update_current_RC(self):
@@ -180,6 +182,7 @@ def main():
     executor.add_node(node.SubReturnAMRNode) # FrontCarTracking 노드 추가
     executor.add_node(node.PubReturnAMRNode) # FrontCarTracking 노드 추가
     executor.add_node(node.SrvObjectionSeletionAMRNode) # FrontCarTracking 노드 추가
+    executor.add_node(node.PubFindObjAMRNode) # FrontCarTracking 노드 추가
     
     try:
         executor.spin()  # ROS 2 이벤트 루프 시작
