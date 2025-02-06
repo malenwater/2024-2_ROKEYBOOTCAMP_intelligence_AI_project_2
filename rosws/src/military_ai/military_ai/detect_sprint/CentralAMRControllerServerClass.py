@@ -127,6 +127,11 @@ class CentralAMRControllerServerClass(Node):
         send_data_msg.append(width)
         send_data_msg.append(height)
         send_data_msg.append(0.)
+        self.get_logger().info(f'change_tracking {mid_x}')
+        self.get_logger().info(f'change_tracking {mid_y}')
+        self.get_logger().info(f'change_tracking {width}')
+        self.get_logger().info(f'change_tracking {height}')
+        self.get_logger().info(f'change_tracking {send_data_msg}')
         self.PubTrackingPosNode.publish_TrackingPos(send_data_msg)
         self.get_logger().info(f'change_tracking end')
 
