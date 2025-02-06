@@ -86,6 +86,10 @@ class FrontCarTracking(Node):
             elif self.AMR_STATUS == 2:
                 pass
             time.sleep(self.frame_time)
+    
+    def is_over600fps(self):
+        if self.count_lost_follow_car_ID >= 600:
+            self.AMR_STATUS = 1
             
     def check_tracking(self):
         # 현재 status 1인걸로 넘기자
