@@ -40,14 +40,14 @@ class YoloSubscriber(Node):
         x1, y1, w, h, flag = float(detections["x1"]), float(detections["y1"]), float(detections["w"]), float(detections["h"]), detections["flag"]
         object_center = (x1 + x1 + w) / 2  # 객체 중심 좌표 계산 (x1 + w로 두 점 사이의 중앙값)
 
-        if object_center < self.frame_width * 0.2:
+        if flag == 1.0:
+            self.publish_cmd_mode(3.0)  # 감지된 객체가 flag 1일 경우 → 정지
+        elif object_center < self.frame_width * 0.2:
             self.publish_cmd_mode(0.0)  # 왼쪽 → 좌회전
             self.get_logger().info("Detected object on LEFT, turning LEFT")
         elif object_center > self.frame_width * 0.8:
             self.publish_cmd_mode(2.0)  # 오른쪽 → 우회전
             self.get_logger().info("Detected object on RIGHT, turning RIGHT")
-        elif flag == 1:
-            self.publish_cmd_mode(3.0)  # 감지된 객체가 flag 1일 경우 → 정지
         else:
             self.publish_cmd_mode(1.0)  # 중앙 → 직진
             self.get_logger().info("Detected object in CENTER, moving FORWARD")
