@@ -18,6 +18,7 @@ set(msg_files
 "msg/StopCar.msg"
 "msg/NavGo.msg"
 "msg/TrackingPos.msg"
+"msg/Return.msg"
 )
 
 set(srv_files

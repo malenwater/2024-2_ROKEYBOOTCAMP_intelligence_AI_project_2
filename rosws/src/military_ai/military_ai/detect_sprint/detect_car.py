@@ -2,13 +2,21 @@ import cv2
 import torch
 import time
 from ultralytics import YOLO
+from ament_index_python.packages import get_package_share_directory
+import os
 
 class YoloProcessor:
     def __init__(self, frame_time=1/30, model_path="best5car_dummy.pt"):
         """YOLO 기반 차량 감지 및 추적 프로세서"""
+        package_name = "military_ai"  # ROS 2 패키지명
+        package_share_directory = get_package_share_directory(package_name)
+        # 모델 파일이 있는 경로 지정
+        model_path = os.path.join(package_share_directory, "resource", model_path)
+        
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = YOLO(model_path)
         self.cap = cv2.VideoCapture(0)
+        # self.cap = cv2.VideoCapture(2)
         self.cap.set(cv2.CAP_PROP_FPS, 30)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
         self.running = False
@@ -42,11 +50,11 @@ class YoloProcessor:
                 self.detection_result = detections
                 self.high_car_result = high_car
                 
-                if current_time - last_print_time > 0.5:
-                    print("\n=== Detection Results ===")
-                    for d in self.detection_result:
-                        print(f"class_id : {d[4]} ,track_id: {d[5]}, confidence: {d[6]}, BBox: ({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f}, {d[3]:.1f})")
-                    last_print_time = current_time
+                # if current_time - last_print_time > 0.5:
+                #     print("\n=== Detection Results ===")
+                #     for d in self.detection_result:
+                #         print(f"class_id : {d[4]} ,track_id: {d[5]}, confidence: {d[6]}, BBox: ({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f}, {d[3]:.1f})")
+                #     last_print_time = current_time
             
             time.sleep(self.frame_time)
         
