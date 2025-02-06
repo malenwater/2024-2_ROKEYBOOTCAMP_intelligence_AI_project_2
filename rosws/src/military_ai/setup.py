@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'AMRmainServer = military_ai.detect_sprint.front_car_tracking:main',
         ],
     },
 )
