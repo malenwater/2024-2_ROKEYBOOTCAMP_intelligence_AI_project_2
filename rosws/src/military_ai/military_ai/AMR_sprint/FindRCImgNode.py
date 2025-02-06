@@ -1,5 +1,4 @@
 import rclpy
-import json
 from rclpy.node import Node
 from std_msgs.msg import String, Float32
 from military_interface.msg import TrackingPos
@@ -27,32 +26,34 @@ class YoloSubscriber(Node):
 
     def yolo_callback(self, msg):
         """YOLO 감지 결과를 받아서 이동 방향 결정 후 퍼블리시"""
-        detections = {"x1":msg.trackingpos[0],
-                      "y1":msg.trackingpos[1],
-                      "w":msg.trackingpos[2],
-                      "h":msg.trackingpos[3],
-                      "flag":msg.trackingpos[4]}
+        detections = {"x1": msg.trackingpos[0],
+                    "y1": msg.trackingpos[1],
+                    "w": msg.trackingpos[2],
+                    "h": msg.trackingpos[3],
+                    "flag": msg.trackingpos[4]}
 
         if not detections:
             self.publish_cmd_mode(3.0)  # 감지된 객체 없음 → 정지
             return
 
-        for d in detections:
-            x1, x2 = float(d['x1']), float(d['x2'])  # 바운딩 박스 좌표 (float 변환)
-            object_center = (x1 + x2) / 2  # 객체 중심 좌표
+        # detections 딕셔너리에서 x1, y1, w, h, flag 값을 직접 접근하여 처리
+        x1, y1, w, h, flag = float(detections["x1"]), float(detections["y1"]), float(detections["w"]), float(detections["h"]), detections["flag"]
+        object_center = (x1 + x1 + w) / 2  # 객체 중심 좌표 계산 (x1 + w로 두 점 사이의 중앙값)
 
-            if object_center < self.frame_width * 0.3:
-                self.publish_cmd_mode(0.0)  # 왼쪽 → 좌회전
-                self.get_logger().info("Detected object on LEFT, turning LEFT")
-            elif object_center > self.frame_width * 0.7:
-                self.publish_cmd_mode(2.0)  # 오른쪽 → 우회전
-                self.get_logger().info("Detected object on RIGHT, turning RIGHT")
-            elif detections["flag"] == 1:
-                self.publish_cmd_mode(3.0)  # 오른쪽 → 우회전
-            else:
-                self.publish_cmd_mode(1.0)  # 중앙 → 직진
-                self.get_logger().info("Detected object in CENTER, moving FORWARD")
-            return  # 첫 번째 감지된 객체만 처리하고 종료
+        if object_center < self.frame_width * 0.3:
+            self.publish_cmd_mode(0.0)  # 왼쪽 → 좌회전
+            self.get_logger().info("Detected object on LEFT, turning LEFT")
+        elif object_center > self.frame_width * 0.7:
+            self.publish_cmd_mode(2.0)  # 오른쪽 → 우회전
+            self.get_logger().info("Detected object on RIGHT, turning RIGHT")
+        elif flag == 1:
+            self.publish_cmd_mode(3.0)  # 감지된 객체가 flag 1일 경우 → 정지
+        else:
+            self.publish_cmd_mode(1.0)  # 중앙 → 직진
+            self.get_logger().info("Detected object in CENTER, moving FORWARD")
+
+        # 첫 번째 감지된 객체만 처리하고 종료
+        return
 
     def publish_cmd_mode(self, mode):
         """이동 방향을 Float32 타입으로 /cmd_mode 토픽에 퍼블리시"""
