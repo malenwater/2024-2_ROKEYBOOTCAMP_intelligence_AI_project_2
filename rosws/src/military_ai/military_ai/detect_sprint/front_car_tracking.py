@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from detect_car import YoloProcessor
+from military_ai.detect_sprint.detect_car import YoloProcessor
 import threading
 import time
 from military_interface.msg import StopCar
@@ -10,8 +10,10 @@ class FrontCarTracking(Node):
     """ROS2 서비스 노드 (YOLO 실행 요청을 처리)"""
     def __init__(self):
         super().__init__('front_car_tracking')
-        self.NOMAL = 1
-        self.LOST = 2
+        self.AMR_STATUS = 2
+        # AMR_STATUS = 0 평상시 추적
+        # AMR_STATUS = 1 객체 잃은 추적
+        # AMR_STATUS = 2 대기 상태
         self.found_car_ID = None
         self.follow_car_ID = None
         self.follow_car = None
@@ -24,6 +26,7 @@ class FrontCarTracking(Node):
         self.ask_right_event = threading.Event()  # 이벤트 생성
         self.ask_right_response = None
         self.running = False
+        
         # YOLO 실행 클래스를 인스턴스로 생성하여 관리
         self.yolo_processor = YoloProcessor(self.frame_time)
         self.yolo_thread = threading.Thread(target=self.yolo_processor.run_yolo)
@@ -48,45 +51,52 @@ class FrontCarTracking(Node):
         )
         self.get_logger().info('Subscribed to StopCar topic')
         
-    def run_detect_controller(self):
+    def run_tracking(self):
         self.running = True
-        self.get_logger().info(f'run_detect_controller start')
+        self.get_logger().info(f'run_tracking start')
         while self.running:
             self.detection_result = self.yolo_processor.get_result()
-            if self.follow_car_ID is not None:
-                with self.lock_follow_car_ID:  # 변수를 읽을 때도 Lock을 사용하여 안전하게
-                    print("Tracking Car ID:", self.detection_result)
-                    
-                    if self.count_lost_follow_car_ID >= 3 and self.detection_result != None and len(self.detection_result) > 0:
-                        print("over 30")
-                        print("over 30")
-                        print("over 30")
-                        x1, y1, x2, y2, track_id, detect_class = self.detection_result[0]
-                        if detect_class == "Car": # 차후에 바꿈
-                            self.found_car_ID = track_id
-                            print("hihi",self.ask_right_send_request())
-                            # self.follow_car_ID = track_id
-                    else:
-                        # ---------------------------------------------
-                        check_exit_current_follow_car_ID = False
-                        for obj in (self.detection_result):
-                            x1, y1, x2, y2, track_id, detect_class = obj
-                            if self.follow_car_ID == track_id:
-                                
-                                # 이부분 큐로 전환
-                                with self.lock_follow_car:
-                                    self.follow_car = [x1, y1, x2, y2, self.NOMAL]
-                                    
-                                self.count_lost_follow_car_ID = 0
-                                check_exit_current_follow_car_ID = True
-                                break
-                        if check_exit_current_follow_car_ID == False:
-                            self.count_lost_follow_car_ID += 1
-                        # ---------------------------------------------
-                        
-                # print("YOLO 감지 결과:", self.detection_result)
+            
+            if self.AMR_STATUS == 0:
+                if self.follow_car_ID is not None:
+                    with self.lock_follow_car_ID:  # 변수를 읽을 때도 Lock을 사용하여 안전하게
+                        self.update_current_RC()
+                        self.change_tracking()
+ 
+            elif self.AMR_STATUS == 1:
+                self.check_tracking()
+            elif self.AMR_STATUS == 2:
+                pass
             time.sleep(self.frame_time)
             
+    def check_tracking(self):
+        # 현재 status 1인걸로 넘기자
+        # if self.count_lost_follow_car_ID >= 300 and self.detection_result != None and len(self.detection_result) > 0:
+        #     x1, y1, x2, y2, track_id, detect_class = self.detection_result[0]
+        #     if detect_class == "Car": # 차후에 바꿈
+        #         self.found_car_ID = track_id
+        #         # self.follow_car_ID = track_id
+        pass
+                
+    def update_current_RC(self):
+        check_exit_current_follow_car_ID = False
+        for obj in (self.detection_result):
+            x1, y1, x2, y2, track_id, detect_class = obj
+            if self.follow_car_ID == track_id:
+                
+                # 이부분 큐로 전환
+                with self.lock_follow_car:
+                    self.follow_car = [x1, y1, x2, y2]
+                    
+                self.count_lost_follow_car_ID = 0
+                check_exit_current_follow_car_ID = True
+                break
+        if check_exit_current_follow_car_ID == False:
+            self.count_lost_follow_car_ID += 1
+            
+    def change_tracking(self):
+        pass
+    
     def get_follow_car(self):
         """YOLO 결과 읽기"""
         with self.lock_follow_car:  # 🔒 데이터 충돌 방지
@@ -97,17 +107,19 @@ class FrontCarTracking(Node):
         # --- 제대로 되고 있나 확인해서 트래킹하는 값 정하기
         response.move = True  # 요청 성공 여부 (예시)
         # print(self.detection_result)
+        
+        # 일단 이거 바꿔야함 선택하는 걸로 바꿔야하는데 차후에 바꾸기로
         if self.detection_result != None and len(self.detection_result) > 0:
             x1, y1, x2, y2, track_id, detect_class = self.detection_result[0]
             if detect_class == "Car": # 차후에 바꿈
                 with self.lock_follow_car_ID:
                     self.follow_car_ID = track_id
+                    self.AMR_STATUS = 0
                     response.move = True
                     
         return response
     
     def ask_right_send_request(self):
-        self.req.data = ["hihi"]  # 요청 데이터 설정 (예시)
         response = self.ask_right_cli.call(self.req)
         self.ask_right_response = None  # 이전 응답 초기화
         self.ask_right_event.clear()  # 이벤트 초기화
@@ -128,6 +140,7 @@ class FrontCarTracking(Node):
             
     def stop_car_callback(self, msg):
         self.get_logger().info(f'Received StopCar message: {msg} and reseted follow_car_ID')
+        self.AMR_STATUS = 2
         with self.lock_follow_car_ID:
             self.follow_car_ID = None
         with self.lock_follow_car:
@@ -151,7 +164,7 @@ def main():
     node = FrontCarTracking()
     node.get_logger().info('Front Car Tracking Node 시작!')
     
-    detect_thread = threading.Thread(target=node.run_detect_controller)
+    detect_thread = threading.Thread(target=node.run_tracking)
     detect_thread.start()
     
     try:
