@@ -69,23 +69,32 @@ class CentralAMRControllerServerClass(Node):
             elif self.AMR_STATUS == 2:
                 pass
             time.sleep(self.frame_time)
+            
     def publish_stop(self):
         self.get_logger().info(f'publish_stop')
         send_data_msg = [0.,0.,0.,0.,1.]
         self.PubTrackingPosNode.publish_TrackingPos(send_data_msg)
-        
+
+    def publish_find_follow_car_ID(self):
+        self.get_logger().info(f'publish_find_follow_car_ID')
+        send_data_msg = [0.,0.,0.,0.,1.]
+        self.PubTrackingPosNode.publish_TrackingPos(send_data_msg)
+           
     def is_over600fps(self):
         if self.count_lost_follow_car_ID >= 600:
             self.AMR_STATUS = 1
             
     def check_tracking(self):
         # 현재 status 1인걸로 넘기자
-        # if self.count_lost_follow_car_ID >= 300 and self.detection_result != None and len(self.detection_result) > 0:
-        #     x1, y1, x2, y2, track_id, detect_class = self.detection_result[0]
-        #     if detect_class == "Car": # 차후에 바꿈
-        #         self.found_car_ID = track_id
-        #         # self.follow_car_ID = track_id
-        pass
+        self.get_logger().info(f'check_tracking start')
+        if self.detection_result != None and len(self.detection_result) > 0:
+            for Obj in self.detection_result:
+                self.get_logger().info(f'check_tracking Obj[4] {Obj[4]} and follow_car_ID {self.follow_car_ID}')
+                if Obj[4] == self.follow_car_ID:
+                    self.get_logger().info(f'check_tracking detect obj end')
+                    self.AMR_STATUS = 1
+                    self.count_lost_follow_car_ID
+        self.get_logger().info(f'check_tracking end')
                 
     def update_current_RC(self):
         self.get_logger().info(f'update_current_RC start')
