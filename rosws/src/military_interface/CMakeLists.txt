@@ -18,6 +18,7 @@ set(msg_files
 "msg/StopCar.msg"
 "msg/TrackingPos.msg"
 "msg/Return.msg"
+"msg/XZVector.msg"
 )
 
 set(srv_files

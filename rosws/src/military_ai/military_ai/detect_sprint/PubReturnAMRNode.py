@@ -13,6 +13,7 @@ class PubReturnAMRNode(Node):
             'nav_command',
             10
             )
+        
         self.get_logger().info('PubReturnAMRNode end')
 
     def publish_NavGo(self):

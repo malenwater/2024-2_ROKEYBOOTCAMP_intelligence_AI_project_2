@@ -81,7 +81,7 @@ class CentralAMRControllerServerClass(Node):
         self.PubTrackingPosNode.publish_TrackingPos(send_data_msg)
            
     def is_over600fps(self):
-        if self.count_lost_follow_car_ID >= 600:
+        if self.count_lost_follow_car_ID >= 3:
             self.AMR_STATUS = 1
             
     def check_tracking(self):
@@ -94,7 +94,9 @@ class CentralAMRControllerServerClass(Node):
                     self.get_logger().info(f'check_tracking detect obj end')
                     self.AMR_STATUS = 1
                     self.count_lost_follow_car_ID
-                    self.PubFindObjAMRNode.publish_float_to_AMR_cmdVel()
+                    self.publish_stop()
+                    
+            self.PubFindObjAMRNode.publish_float_to_AMR_cmdVel()
                     
         self.get_logger().info(f'check_tracking end')
                 

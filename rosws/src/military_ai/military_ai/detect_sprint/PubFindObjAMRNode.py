@@ -15,6 +15,6 @@ class PubFindObjAMRNode(Node):
 
     def publish_float_to_AMR_cmdVel(self):
         msg = Float32()
-        msg = 0.0
+        msg.data = 0.0
         self.FindObj_publisher.publish(msg)
-        self.get_logger().info('Published publish_float_to_AMR_cmdVel')
+        self.get_logger().info(f"Published Command Mode: {0}")
