@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -19,6 +20,7 @@ set(msg_files
 "msg/TrackingPos.msg"
 "msg/Return.msg"
 "msg/XZVector.msg"
+"msg/ControlCmd.msg"
 )
 
 set(srv_files
@@ -30,7 +32,7 @@ set(srv_files
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
   ${srv_files}
-  DEPENDENCIES builtin_interfaces
+  DEPENDENCIES builtin_interfaces std_msgs
 )
 
 if(BUILD_TESTING)

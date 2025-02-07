@@ -14,7 +14,7 @@ setup(
         ('share/' + package_name + '/resource', glob.glob(os.path.join('resource', '*.pt'))),
     ],
     install_requires=['setuptools'],
-    zip_safe=True,
+    zip_safe=True,   
     maintainer='sunwolee',
     maintainer_email='128200788+malenwater@users.noreply.github.com',
     description='TODO: Package description',
@@ -27,6 +27,7 @@ setup(
             'MoveArg = military_ai.AMR_sprint.FindRCImgNode:main',
             'Movecmd = military_ai.AMR_sprint.tur_cmd_vel:main',
             'Nav = military_ai.AMR_sprint.nav:main',
+            'yolo_subscriber = military_ai.AMR_sprint.FindRCImgNode_2:main'
         ],
     },
 )
