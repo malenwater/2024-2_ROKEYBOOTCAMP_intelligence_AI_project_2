@@ -24,4 +24,5 @@ class SubStopAMRNode(Node):
         self.mainServer.set_follow_car(None)
         self.mainServer.set_follow_car_ID(None)
         self.mainServer.set_AMR_STATUS(2)
+        self.mainServer.set_AMR_STATUS_2(True)
         self.mainServer.publish_stop()

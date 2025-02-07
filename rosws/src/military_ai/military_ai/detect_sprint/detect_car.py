@@ -65,6 +65,7 @@ class YoloProcessor:
                 #         x1, y1, x2, y2, track_id, class_id, confidence = d
                 #         print(f"class_id : {class_id} ,track_id: {track_id}, confidence: {confidence}, BBox: ({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f}, {d[3]:.1f})")
                 #     last_print_time = current_time
+                    
             time.sleep(self.frame_time)
         
     def get_result(self):

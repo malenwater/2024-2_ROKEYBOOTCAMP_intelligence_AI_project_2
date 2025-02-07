@@ -9,8 +9,10 @@ from .SrvReadyObjectionSeletionAMRNode import SrvReadyObjectionSeletionAMRNode
 from .SrvReadyRequestSolveAMRNode import SrvReadyRequestSolveAMRNode
 class CentralPCControllerServerClass(Node):
     def __init__(self):
+        super().__init__('CentralPCControllerServerClass')
         print(f'CentralPCControllerServerClass 시작!')
         self.running = False
+        self.class_data = {"0" : "Car","1" : "Dummy"}
         self.PubReadyStopAMRNode = PubReadyStopAMRNode()
         self.PubReadyReturnAMRNode = PubReadyReturnAMRNode()
         self.SrvReadyObjectionSeletionAMRNode = SrvReadyObjectionSeletionAMRNode(self)
@@ -24,26 +26,23 @@ class CentralPCControllerServerClass(Node):
                 self.running = False
             elif user_input == "시작":
                 future = self.SrvReadyRequestSolveAMRNode.select_request()
-                if future.done():
-                    try:
-                        service_response = future.result()
-                    except Exception as e:  # noqa: B902
-                        self.get_logger().warn('Service call failed: {}'.format(str(e)))
-                    else:
-                        self.get_logger().info(
-                            'Result: {}'.format(service_response.arithmetic_result))
+                service_response = future.movecar
+
                 print(f'{service_response}로 데이터 수신')
-                user_input = input("ID를 입력하세요. ")
+                for i in range(int(len(service_response)/2)):
+                    print(f'ID는 {service_response[2 * i]} 종류는 {self.class_data[service_response[2 * i + 1]]}')
+                user_input = input("ID를 입력하세요. 만약 선택하지 않는다면 `다시`를 입력하세요 ")
+                if user_input == "다시":
+                    print(f'다시 시작합니다.')
+                    continue
+                try:
+                    user_input = int(user_input)  # 숫자로 변환 시도
+                except ValueError:  # 변환 실패하면 그냥 무시하고 다시 입력받음
+                    print(f'숫자를 입력하세요. 다시 시작합니다.')
+                    continue  
                 future = self.SrvReadyObjectionSeletionAMRNode.select_request(user_input)
-                if future.done():
-                    try:
-                        service_response = future.result()
-                    except Exception as e:  # noqa: B902
-                        self.get_logger().warn('Service call failed: {}'.format(str(e)))
-                    else:
-                        self.get_logger().info(
-                            'Result: {}'.format(service_response.arithmetic_result))
                 print(f'선택되었습니다.')
+
             elif user_input == "정지":
                 self.PubReadyStopAMRNode.publish_Ready_stop()
                 print(f'`AMR이 추적상태에서 정지되어 대기상태가 되었습니다.')

@@ -19,6 +19,7 @@ class CentralAMRControllerServerClass(Node):
         super().__init__('front_car_tracking')
         # self.AMR_STATUS = 2
         self.AMR_STATUS = 2
+        self.AMR_STATUS_2 = True
         self.CAR = 0
         self.follow_car = None
         self.follow_car_ID = None
@@ -61,13 +62,17 @@ class CentralAMRControllerServerClass(Node):
                 
             if self.AMR_STATUS == 0 and self.follow_car_ID is not None:
                 self.get_logger().info(f'AMR_STATUS {self.AMR_STATUS}, will move')
-                self.is_over600fps()
+                self.is_over300fps()
                 self.update_current_RC()
                 self.change_tracking()
  
             elif self.AMR_STATUS == 1:
                 self.check_tracking()
             elif self.AMR_STATUS == 2:
+                if self.AMR_STATUS_2:
+                    self.get_logger().info(f'run_tracking self.AMR_STATUS_2 : {self.AMR_STATUS_2} stop')
+                    self.publish_stop()
+                    self.AMR_STATUS_2 = False
                 pass
             time.sleep(self.frame_time)
             
@@ -81,8 +86,8 @@ class CentralAMRControllerServerClass(Node):
         send_data_msg = [0.,0.,0.,0.,1.]
         self.PubTrackingPosNode.publish_TrackingPos(send_data_msg)
            
-    def is_over600fps(self):
-        if self.count_lost_follow_car_ID >= 3:
+    def is_over300fps(self):
+        if self.count_lost_follow_car_ID >= 300:
             self.AMR_STATUS = 1
         self.get_logger().info(f'run_tracking  {self.count_lost_follow_car_ID} count and {self.AMR_STATUS}')
             
@@ -175,6 +180,8 @@ class CentralAMRControllerServerClass(Node):
     def set_AMR_STATUS(self,data):
         self.AMR_STATUS = data
     
+    def set_AMR_STATUS_2(self,data):
+        self.AMR_STATUS_2 = data
 def main():
     rclpy.init()
     node = CentralAMRControllerServerClass()
