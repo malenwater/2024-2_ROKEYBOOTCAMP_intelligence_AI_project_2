@@ -21,14 +21,14 @@ class ControlCMDModeNode(Node):
 
     def cmd_mode_callback(self, msg):
         cmd_vel_msg = Twist()
-
+              
         if msg.data == 0.0:  # 좌회전
             cmd_vel_msg.angular.z = 0.25
             cmd_vel_msg.linear.x = 0.05
             self.get_logger().info("Turning Left")
         
         elif msg.data == 1.0:  # 직진
-            cmd_vel_msg.linear.x = 0.1
+            cmd_vel_msg.linear.x = 0.05
             self.get_logger().info("Moving Forward")
         
         elif msg.data == 2.0:  # 우회전
