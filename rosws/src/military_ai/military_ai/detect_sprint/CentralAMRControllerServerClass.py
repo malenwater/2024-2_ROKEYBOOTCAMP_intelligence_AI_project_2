@@ -11,6 +11,7 @@ from .SubReturnAMRNode import SubReturnAMRNode
 from .SrvRequestSolveAMRNode import SrvRequestSolveAMRNode
 from .SrvObjectionSeletionAMRNode import SrvObjectionSeletionAMRNode
 from .PubFindObjAMRNode import PubFindObjAMRNode
+from .PubFindObjAMRNode_2 import PubFindObjAMRNode_2
 
 class CentralAMRControllerServerClass(Node):
     """ROS2 서비스 노드 (YOLO 실행 요청을 처리)"""
@@ -48,7 +49,7 @@ class CentralAMRControllerServerClass(Node):
         
         self.SrvRequestSolveAMRNode = SrvRequestSolveAMRNode(self)
         self.SrvObjectionSeletionAMRNode = SrvObjectionSeletionAMRNode(self)
-        
+        self.PubFindObjAMRNode_2 = PubFindObjAMRNode_2()
     def run_tracking(self):
         self.running = True
         self.get_logger().info(f'run_tracking start')
@@ -83,6 +84,7 @@ class CentralAMRControllerServerClass(Node):
     def is_over600fps(self):
         if self.count_lost_follow_car_ID >= 3:
             self.AMR_STATUS = 1
+        self.get_logger().info(f'run_tracking  {self.count_lost_follow_car_ID} count and {self.AMR_STATUS}')
             
     def check_tracking(self):
         # 현재 status 1인걸로 넘기자
@@ -97,12 +99,17 @@ class CentralAMRControllerServerClass(Node):
                     self.publish_stop()
                     
             self.PubFindObjAMRNode.publish_float_to_AMR_cmdVel()
-                    
+            # self.PubFindObjAMRNode_2.publish_float_to_AMR_cmdVel_byVector()
         self.get_logger().info(f'check_tracking end')
                 
     def update_current_RC(self):
         self.get_logger().info(f'update_current_RC start')
         check_exit_current_follow_car_ID = False
+        if self.detection_result is None:
+            self.follow_car = None
+            self.count_lost_follow_car_ID += 1
+            return
+        
         for obj in (self.detection_result):
             x1, y1, x2, y2, track_id, class_id, confidence = obj
             if self.follow_car_ID == track_id:
@@ -119,7 +126,7 @@ class CentralAMRControllerServerClass(Node):
             
     def change_tracking(self):
         self.get_logger().info(f'change_tracking start')
-        if self.follow_car is None:
+        if self.follow_car is None :
             return
         send_data_msg = []
         width = self.follow_car[2] - self.follow_car[0]
@@ -185,6 +192,7 @@ def main():
     executor.add_node(node.PubReturnAMRNode) # FrontCarTracking 노드 추가
     executor.add_node(node.SrvObjectionSeletionAMRNode) # FrontCarTracking 노드 추가
     executor.add_node(node.PubFindObjAMRNode) # FrontCarTracking 노드 추가
+    executor.add_node(node.PubFindObjAMRNode_2) # FrontCarTracking 노드 추가
     
     try:
         executor.spin()  # ROS 2 이벤트 루프 시작

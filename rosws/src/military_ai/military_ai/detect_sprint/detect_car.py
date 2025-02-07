@@ -31,10 +31,12 @@ class YoloProcessor:
         
         while self.running and self.cap.isOpened():
             success, frame = self.cap.read()
+            self.detection_result = None
+            self.high_car_result = None
             if not success:
                 break
             
-            results = self.model.track(frame, persist=False, device=self.device, verbose=False)
+            results = self.model.track(frame, persist=False, device=self.device)
             
             if results[0].boxes is not None and results[0].boxes.data.nelement() > 0:
                 current_time = time.time()
@@ -50,19 +52,25 @@ class YoloProcessor:
                 self.detection_result = detections
                 self.high_car_result = high_car
                 
+                if current_time - last_print_time > 0.5:
+                    print("\n=== Detection Results ===")
+                    for d in self.detection_result:
+                        x1, y1, x2, y2, track_id, class_id, confidence = d
+                        print(f"class_id : {class_id} ,track_id: {track_id}, confidence: {confidence}, BBox: ({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f}, {d[3]:.1f})")
+                    last_print_time = current_time
+                
                 # if current_time - last_print_time > 0.5:
                 #     print("\n=== Detection Results ===")
-                #     for d in self.detection_result:
+                #     for d in self.high_car_result:
                 #         x1, y1, x2, y2, track_id, class_id, confidence = d
                 #         print(f"class_id : {class_id} ,track_id: {track_id}, confidence: {confidence}, BBox: ({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f}, {d[3]:.1f})")
                 #     last_print_time = current_time
-            
             time.sleep(self.frame_time)
         
     def get_result(self):
         """최신 YOLO 감지 결과 반환"""
-        # return self.detection_result
-        return self.high_car
+        return self.detection_result
+        # return self.high_car_result
     
     def stop(self):
         """YOLO 실행 중지"""

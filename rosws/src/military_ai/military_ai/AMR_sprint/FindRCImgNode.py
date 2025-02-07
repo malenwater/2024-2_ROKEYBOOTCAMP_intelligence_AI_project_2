@@ -18,7 +18,7 @@ class YoloSubscriber(Node):
 
         # 이동 명령 퍼블리셔 (/cmd_mode) - Float32 타입으로 변경
         self.cmd_mode_publisher = self.create_publisher(Float32, '/cmd_mode', 10)
-
+        self.fps30 = 0
         # 화면 가로 크기 설정 (예제 값, 필요시 조정)
         self.frame_width = 640
 
@@ -31,28 +31,36 @@ class YoloSubscriber(Node):
                     "w": msg.trackingpos[2],
                     "h": msg.trackingpos[3],
                     "flag": msg.trackingpos[4]}
-
+        
+        if self.fps30 != 30:
+            self.get_logger().info(f"self.fps30 {self.fps30}")
+            self.fps30 += 1
+            if flag == 1.0:
+                self.publish_cmd_mode(3.0)  # 감지된 객체가 flag 1일 경우 → 정지
+            return
+        
+        self.get_logger().info(f"move MoveArg")
+        
         if not detections:
             self.publish_cmd_mode(3.0)  # 감지된 객체 없음 → 정지
             return
 
         # detections 딕셔너리에서 x1, y1, w, h, flag 값을 직접 접근하여 처리
         x1, y1, w, h, flag = float(detections["x1"]), float(detections["y1"]), float(detections["w"]), float(detections["h"]), detections["flag"]
-        object_center = (x1 + x1 + w) / 2  # 객체 중심 좌표 계산 (x1 + w로 두 점 사이의 중앙값)
+        object_center = x1   # 객체 중심 좌표 계산 (x1 + w로 두 점 사이의 중앙값)
 
         if flag == 1.0:
             self.publish_cmd_mode(3.0)  # 감지된 객체가 flag 1일 경우 → 정지
-        elif object_center < self.frame_width * 0.2:
+        elif object_center < self.frame_width * 0.3:
             self.publish_cmd_mode(0.0)  # 왼쪽 → 좌회전
             self.get_logger().info("Detected object on LEFT, turning LEFT")
-        elif object_center > self.frame_width * 0.8:
+        elif object_center > self.frame_width * 0.7:
             self.publish_cmd_mode(2.0)  # 오른쪽 → 우회전
             self.get_logger().info("Detected object on RIGHT, turning RIGHT")
         else:
             self.publish_cmd_mode(1.0)  # 중앙 → 직진
             self.get_logger().info("Detected object in CENTER, moving FORWARD")
 
-        # 첫 번째 감지된 객체만 처리하고 종료
         return
 
     def publish_cmd_mode(self, mode):

@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'AMRmainServer = military_ai.detect_sprint.CentralAMRControllerServerClass:main',
+            'PCmainServer = military_ai.User_UI.CentralPCControllerServerClass:main',
             'MoveArg = military_ai.AMR_sprint.FindRCImgNode:main',
             'Movecmd = military_ai.AMR_sprint.tur_cmd_vel:main',
             'Nav = military_ai.AMR_sprint.nav:main',
