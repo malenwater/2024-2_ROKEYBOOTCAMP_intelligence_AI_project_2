@@ -2,3 +2,7 @@
 data_file
 AI
 .~lock*
+build
+install
+log
+__pycache__
