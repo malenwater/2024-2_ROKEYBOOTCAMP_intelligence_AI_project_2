@@ -18,7 +18,7 @@ class YoloSubscriber(Node):
 
         # 이동 명령 퍼블리셔 (/cmd_mode) - Float32 타입으로 변경
         self.cmd_mode_publisher = self.create_publisher(Float32, '/cmd_mode', 10)
-        self.fps30 = 0
+        # self.fps30 = 0
         # 화면 가로 크기 설정 (예제 값, 필요시 조정)
         self.frame_width = 640
 
@@ -32,13 +32,11 @@ class YoloSubscriber(Node):
                     "h": msg.trackingpos[3],
                     "flag": msg.trackingpos[4]}
         
-        if self.fps30 != 30:
+        if self.fps30 != 1:
             self.get_logger().info(f"self.fps30 {self.fps30}")
             self.fps30 += 1
-            if flag == 1.0:
-                self.publish_cmd_mode(3.0)  # 감지된 객체가 flag 1일 경우 → 정지
             return
-        
+        self.fps30 = 0
         self.get_logger().info(f"move MoveArg")
         
         if not detections:

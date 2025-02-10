@@ -22,7 +22,7 @@ class YoloProcessor:
         self.running = False
         self.frame_time = frame_time
         self.detection_result = None
-        self.high_car_result = None
+        # self.high_car_result = None
         
     def run_yolo(self):
         """YOLO 실행 및 객체 감지"""
@@ -32,25 +32,24 @@ class YoloProcessor:
         while self.running and self.cap.isOpened():
             success, frame = self.cap.read()
             self.detection_result = None
-            self.high_car_result = None
+            # self.high_car_result = None
             if not success:
                 break
             
             results = self.model.track(frame, persist=False, device=self.device)
-            
             if results[0].boxes is not None and results[0].boxes.data.nelement() > 0:
                 current_time = time.time()
                 detections = []
-                high_car = []
+                # high_car = []
                 for box in results[0].boxes.data.tolist():
                     if len(box) >= 6:
                         x1, y1, x2, y2, track_id, confidence = box[:6]
                         class_id = int(box[6]) if len(box) > 6 and isinstance(box[6], (int, float)) else -1
-                        if class_id == 0 and confidence >= 0.8:
-                            high_car.append([x1, y1, x2, y2, track_id, class_id, confidence])
+                        # if class_id == 0 and confidence >= 0.8:
+                        #     high_car.append([x1, y1, x2, y2, track_id, class_id, confidence])
                         detections.append([x1, y1, x2, y2, track_id, class_id, confidence])
                 self.detection_result = detections
-                self.high_car_result = high_car
+                # self.high_car_result = high_car
                 
                 if current_time - last_print_time > 0.5:
                     print("\n=== Detection Results ===")

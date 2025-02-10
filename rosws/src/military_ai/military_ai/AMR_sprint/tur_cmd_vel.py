@@ -23,17 +23,17 @@ class ControlCMDModeNode(Node):
         cmd_vel_msg = Twist()
               
         if msg.data == 0.0:  # 좌회전
-            cmd_vel_msg.angular.z = 0.25
-            cmd_vel_msg.linear.x = 0.05
+            cmd_vel_msg.angular.z = 0.125
+            cmd_vel_msg.linear.x = 0.001
             self.get_logger().info("Turning Left")
         
         elif msg.data == 1.0:  # 직진
-            cmd_vel_msg.linear.x = 0.05
+            cmd_vel_msg.linear.x = 0.001
             self.get_logger().info("Moving Forward")
         
         elif msg.data == 2.0:  # 우회전
-            cmd_vel_msg.angular.z = -0.25
-            cmd_vel_msg.linear.x = 0.05
+            cmd_vel_msg.angular.z = -0.125
+            cmd_vel_msg.linear.x = 0.001
             self.get_logger().info("Turning Right")
            
         elif msg.data == 3.0:  # 정지

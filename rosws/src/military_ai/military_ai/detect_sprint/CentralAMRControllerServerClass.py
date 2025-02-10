@@ -12,6 +12,7 @@ from .SrvRequestSolveAMRNode import SrvRequestSolveAMRNode
 from .SrvObjectionSeletionAMRNode import SrvObjectionSeletionAMRNode
 from .PubFindObjAMRNode import PubFindObjAMRNode
 from .PubFindObjAMRNode_2 import PubFindObjAMRNode_2
+from .PubSendObjNode import PubSendObjNode
 
 class CentralAMRControllerServerClass(Node):
     """ROS2 서비스 노드 (YOLO 실행 요청을 처리)"""
@@ -24,13 +25,14 @@ class CentralAMRControllerServerClass(Node):
         self.follow_car = None
         self.follow_car_ID = None
         self.detection_result = None
+        self.Obj = None
         self.count_lost_follow_car_ID = 0
         
         # AMR_STATUS = 0 평상시 추적
         # AMR_STATUS = 1 객체 잃은 추적
         # AMR_STATUS = 2 대기 상태
-        # self.frame_time = 1 / 30
-        self.frame_time = 1
+        self.frame_time = 1 / 30
+        # self.frame_time = 1
         self.ask_right_response = None
         self.running = False
         
@@ -51,12 +53,34 @@ class CentralAMRControllerServerClass(Node):
         self.SrvRequestSolveAMRNode = SrvRequestSolveAMRNode(self)
         self.SrvObjectionSeletionAMRNode = SrvObjectionSeletionAMRNode(self)
         self.PubFindObjAMRNode_2 = PubFindObjAMRNode_2()
+        self.PubSendObjNode = PubSendObjNode()
+    def splite_class(self):
+        detection_result = []
+        obj = []
+        for box in self.detection_result:
+            x1, y1, x2, y2, track_id, class_id, confidence = box
+            if class_id == 0:
+                detection_result.append([x1, y1, x2, y2, track_id, class_id, confidence])
+                print(f"class_id {class_id}")
+            else:
+                obj.append([x1, y1, x2, y2, track_id, class_id, confidence])
+        self.detection_result = obj
+        # self.detection_result = detection_result
+        self.Obj = obj
+        
     def run_tracking(self):
         self.running = True
         self.get_logger().info(f'run_tracking start')
         while self.running:
+            self.Obj = None
             self.detection_result = self.yolo_processor.get_result()
+            if self.detection_result is None:  # None 체크
+                self.get_logger().info(f'run_tracking detection_result : detection_result가 None')
+                time.sleep(0.03) 
+                continue  # 그냥 종료
+            self.splite_class()
             self.get_logger().info(f'run_tracking detection_result : {self.detection_result}')
+            self.get_logger().info(f'run_tracking Obj_result : {self.Obj}')
             self.get_logger().info(f'run_tracking AMR_STATUS : {self.AMR_STATUS}')
             self.get_logger().info(f'run_tracking follow_car_ID : {self.follow_car_ID}')
                 
@@ -200,6 +224,7 @@ def main():
     executor.add_node(node.SrvObjectionSeletionAMRNode) # FrontCarTracking 노드 추가
     executor.add_node(node.PubFindObjAMRNode) # FrontCarTracking 노드 추가
     executor.add_node(node.PubFindObjAMRNode_2) # FrontCarTracking 노드 추가
+    executor.add_node(node.PubSendObjNode) # FrontCarTracking 노드 추가
     
     try:
         executor.spin()  # ROS 2 이벤트 루프 시작

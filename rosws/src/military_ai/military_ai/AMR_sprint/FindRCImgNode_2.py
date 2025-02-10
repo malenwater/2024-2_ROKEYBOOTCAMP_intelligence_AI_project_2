@@ -41,12 +41,12 @@ class YoloControlNode(Node):
 
         # 객체 중심 좌표 기준 회전 값 계산 (-0.05 ~ 0.05 범위)
         rotation = (x_center - (self.frame_width / 2)) / (self.frame_width / 2) * -0.05
-        rotation = max(-0.05, min(0.05, rotation))  # 범위 제한
+        rotation = max(-0.01, min(0.01, rotation))  # 범위 제한
 
         # 객체 면적 기준 속도 값 계산 (0.05 ~ -0.05 범위, 가까우면 후진)
         object_area = width * height
         speed = (self.ref_area - object_area) / self.ref_area * 0.05
-        speed = max(-0.05, min(0.05, speed))  # 범위 제한
+        speed = max(-0.01, min(0.01, speed))  # 범위 제한
 
         self.publish_cmd(speed, rotation)
         self.get_logger().info(f"Published: speed={speed:.3f}, rotation={rotation:.3f}")
@@ -54,8 +54,8 @@ class YoloControlNode(Node):
     def publish_cmd(self, speed, rotation):
         """이동 방향을 ControlCmd 메시지로 퍼블리시"""
         msg = ControlCmd()
-        msg.linear_x = speed
-        msg.angular_z = rotation
+        msg.x = speed
+        msg.z = rotation
         self.cmd_publisher.publish(msg)
 
 def main(args=None):
