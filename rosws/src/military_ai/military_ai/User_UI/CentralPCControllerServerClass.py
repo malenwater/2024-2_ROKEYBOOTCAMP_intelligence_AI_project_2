@@ -28,7 +28,6 @@ class CentralPCControllerServerClass(Node):
                 future = self.SrvReadyRequestSolveAMRNode.select_request()
                 service_response = future.movecar
 
-                print(f'{service_response}로 데이터 수신')
                 for i in range(int(len(service_response)/2)):
                     print(f'ID는 {service_response[2 * i]} 종류는 {self.class_data[service_response[2 * i + 1]]}')
                 user_input = input("ID를 입력하세요. 만약 선택하지 않는다면 `다시`를 입력하세요 ")

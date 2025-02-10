@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Twist
+from military_interface.msg import ControlCmd  # 새로 만든 메시지 타입
 
 class ControlCMDModeNode(Node):
     def __init__(self):
@@ -9,8 +10,8 @@ class ControlCMDModeNode(Node):
         
         # /cmd_mode 구독 (0: 좌회전, 2: 우회전, 1: 직진, 3: 정지)
         self.subscription = self.create_subscription(
-            Float32,
-            '/cmd_mode',
+            ControlCmd,
+            '/cmd_vel_control',
             self.cmd_mode_callback,
             10)
         
@@ -22,8 +23,8 @@ class ControlCMDModeNode(Node):
     def cmd_mode_callback(self, msg):
         cmd_vel_msg = Twist()
         
-        x = msg.data[0]  # 전진(+) / 후진(-)
-        z = msg.data[1]  # 좌회전(+) / 우회전(-)
+        x = msg.x  # 전진(+) / 후진(-)
+        z = msg.z  # 좌회전(+) / 우회전(-)
 
         cmd_vel_msg.linear.x = x  # 전진 또는 후진 속도
         cmd_vel_msg.angular.z = z  # 좌회전 또는 우회전 속도

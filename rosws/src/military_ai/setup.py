@@ -11,6 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/launch', glob.glob(os.path.join('launch', '*.launch.py'))),
         ('share/' + package_name + '/resource', glob.glob(os.path.join('resource', '*.pt'))),
     ],
     install_requires=['setuptools'],
@@ -27,7 +28,8 @@ setup(
             'MoveArg = military_ai.AMR_sprint.FindRCImgNode:main',
             'Movecmd = military_ai.AMR_sprint.tur_cmd_vel:main',
             'Nav = military_ai.AMR_sprint.nav:main',
-            'yolo_subscriber = military_ai.AMR_sprint.FindRCImgNode_2:main'
+            'MoveArg2 = military_ai.AMR_sprint.FindRCImgNode_2:main',
+            'Movecmd2 = military_ai.AMR_sprint.tur_cmd_vel_re:main',
         ],
     },
 )
